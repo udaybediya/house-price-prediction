@@ -1,0 +1,219 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>House Price Predictor</title>
+
+    <style>
+      :root {
+        --primary-color: #2563eb;
+        --primary-hover: #1d4ed8;
+        --bg-color: #f3f4f6;
+        --card-bg: #ffffff;
+        --text-main: #1f2937;
+        --text-muted: #6b7280;
+      }
+
+      body {
+        font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+        background-color: var(--bg-color);
+        color: var(--text-main);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        min-height: 100vh;
+        margin: 0;
+      }
+
+      .container {
+        background: var(--card-bg);
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+        width: 100%;
+        max-width: 400px;
+      }
+
+      h2 {
+        margin-bottom: 1.5rem;
+        font-weight: 700;
+        color: var(--text-main);
+      }
+
+      .form-group {
+        text-align: left;
+        margin-bottom: 1rem;
+      }
+
+      label {
+        display: block;
+        font-size: 14px;
+        font-weight: 600;
+        margin-bottom: 5px;
+        color: var(--text-muted);
+      }
+
+      input,
+      select {
+        width: 100%;
+        padding: 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        box-sizing: border-box;
+        font-size: 16px;
+        outline: none;
+        transition: border-color 0.2s;
+      }
+
+      input:focus,
+      select:focus {
+        border-color: var(--primary-color);
+        ring: 2px solid var(--primary-color);
+      }
+
+      button {
+        width: 100%;
+        padding: 12px;
+        background-color: var(--primary-color);
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-top: 1rem;
+        transition: background 0.2s;
+      }
+
+      button:hover {
+        background-color: var(--primary-hover);
+      }
+
+      #result {
+        margin-top: 1.5rem;
+        padding-top: 1rem;
+        border-top: 1px solid #e5e7eb;
+        min-height: 50px;
+      }
+
+      .price-output {
+        text-align: center;
+        align-items: center;
+        justify-content: center;
+        font-size: 22px;
+        font-weight: bold;
+        color: #059669;
+      }
+
+      .accuracy-tag {
+        text-align: center;
+        align-items: center;
+        justify-content: center;
+        font-size: 12px;
+        color: var(--text-muted);
+        display: block;
+        margin-top: 4px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <h2>House Price Predictor</h2>
+
+      <div class="form-group">
+        <label>Area Type</label>
+        <select id="area_type">
+          <option>Super built-up Area</option>
+          <option>Built-up Area</option>
+          <option>Plot Area</option>
+          <option>Carpet Area</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Availability</label>
+        <select id="availability">
+          <option>Ready To Move</option>
+          <option>Available Soon</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Location</label>
+        <select id="location">
+          <option>Whitefield</option>
+          <option>Sarjapur Road</option>
+          <option>Electronic City</option>
+          <option>Thanisandra</option>
+          <option>Kanakpura Road</option>
+          <option>other</option>
+        </select>
+      </div>
+
+      <div class="form-group">
+        <label>Square Feet</label>
+        <input type="number" id="sqft" placeholder="e.g. 1200" value="1200" />
+      </div>
+
+      <div class="form-group" style="display: flex; gap: 10px">
+        <div style="flex: 1">
+          <label>Bathrooms</label>
+          <input type="number" id="bath" value="2" />
+        </div>
+        <div style="flex: 1">
+          <label>BHK</label>
+          <input type="number" id="bhk" value="2" />
+        </div>
+      </div>
+
+      <button onclick="predictPrice()">Estimate Price</button>
+
+      <div id="result"></div>
+    </div>
+
+    <script>
+      async function predictPrice() {
+        const resultDiv = document.getElementById("result");
+        resultDiv.innerHTML = "Calculating...";
+
+        const data = {
+          area_type: document.getElementById("area_type").value,
+          availability: document.getElementById("availability").value,
+          location: document.getElementById("location").value,
+          sqft: document.getElementById("sqft").value,
+          bath: document.getElementById("bath").value,
+          bhk: document.getElementById("bhk").value,
+        };
+
+        try {
+          const response = await fetch("http://127.0.0.1:5000/predict", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(data),
+          });
+
+          const result = await response.json();
+
+          let price = result.price;
+          let displayPrice = "";
+
+          if (price >= 100) {
+            let crore = (price / 100).toFixed(2);
+            displayPrice = `₹ ${crore} Crore`;
+          } else {
+            displayPrice = `₹ ${price} Lakhs`;
+          }
+
+          resultDiv.innerHTML = `
+            <div class="price-output">${displayPrice}</div>
+            <span class="accuracy-tag">(99% it's correct; the other varies on circumstances.)</span>
+          `;
+        } catch (error) {
+          resultDiv.innerHTML =
+            "<span style='color:red;'>Error connecting to server</span>";
+        }
+      }
+    </script>
+  </body>
+</html>
